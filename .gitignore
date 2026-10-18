@@ -1,0 +1,24 @@
+# Environment & Sensitive Credentials
+.env
+.env.local
+.env.*.local
+
+# User Uploaded Media (keep empty folder via .gitkeep)
+/uploads/*
+!/uploads/.gitkeep
+
+# Logs and runtime caches
+*.log
+*.tmp
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE and Editor Directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
