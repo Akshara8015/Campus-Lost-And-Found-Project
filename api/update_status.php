@@ -204,6 +204,51 @@ try {
         ]);
     }
 
+    if ($action === 'delete_report') {
+        $reportId = isset($_POST['report_id']) ? (int)$_POST['report_id'] : 0;
+
+        if ($reportId <= 0) {
+            jsonError('Invalid report ID.');
+        }
+
+        $stmt = $pdo->prepare("SELECT id, user_id, item_name, image_path FROM reports WHERE id = :id");
+        $stmt->execute(['id' => $reportId]);
+        $report = $stmt->fetch();
+
+        if (!$report) {
+            jsonError('Report not found.', 404);
+        }
+
+        if ((int)$report['user_id'] !== $currentUserId && !isAdmin()) {
+            jsonError('You do not have permission to delete this report.', 403);
+        }
+
+        $pdo->beginTransaction();
+
+        // 1. Delete associated claims first
+        $stmtClaims = $pdo->prepare("DELETE FROM claims WHERE report_id = :report_id");
+        $stmtClaims->execute(['report_id' => $reportId]);
+
+        // 2. Delete report
+        $stmtDel = $pdo->prepare("DELETE FROM reports WHERE id = :report_id");
+        $stmtDel->execute(['report_id' => $reportId]);
+
+        $pdo->commit();
+
+        // Remove uploaded image file if exists
+        if (!empty($report['image_path'])) {
+            $imageFullPath = __DIR__ . '/../' . ltrim($report['image_path'], '/\\');
+            if (file_exists($imageFullPath)) {
+                @unlink($imageFullPath);
+            }
+        }
+
+        jsonSuccess('Report deleted successfully.', [
+            'deleted_report_id' => $reportId,
+            'item_name'         => $report['item_name']
+        ]);
+    }
+
     jsonError('Invalid action specified.');
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {

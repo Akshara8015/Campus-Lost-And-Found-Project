@@ -70,18 +70,14 @@ CREATE OR REPLACE FUNCTION validate_claim_report()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
     owner_id BIGINT;
-    kind VARCHAR(10);
 BEGIN
-    SELECT user_id, report_type INTO owner_id, kind
+    SELECT user_id INTO owner_id
     FROM reports WHERE id = NEW.report_id;
     IF owner_id IS NULL THEN
         RAISE EXCEPTION 'Report % does not exist', NEW.report_id;
     END IF;
-    IF kind <> 'found' THEN
-        RAISE EXCEPTION 'Claims can only be made on found-item reports';
-    END IF;
     IF owner_id = NEW.claimant_id THEN
-        RAISE EXCEPTION 'Users cannot claim their own reports';
+        RAISE EXCEPTION 'Users cannot claim or respond to their own reports';
     END IF;
     RETURN NEW;
 END;

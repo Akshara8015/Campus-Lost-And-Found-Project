@@ -1,6 +1,67 @@
 <?php
+require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/uploader.php';
 requireLogin();
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $currentUserId = getCurrentUserId();
+    $itemName    = trim($_POST['item_name'] ?? '');
+    $reportType  = strtolower(trim($_POST['report_type'] ?? ''));
+    $category    = trim($_POST['category'] ?? '');
+    $location    = trim($_POST['location'] ?? '');
+    $itemDate    = trim($_POST['item_date'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+
+    // Server-side validation
+    if ($itemName === '' || strlen($itemName) > 160) {
+        $error = 'Item name is required (max 160 characters).';
+    } elseif (!in_array($reportType, ['lost', 'found'], true)) {
+        $error = 'Report type must be either "lost" or "found".';
+    } elseif ($category === '' || strlen($category) > 80) {
+        $error = 'Category is required (max 80 characters).';
+    } elseif ($location === '' || strlen($location) > 180) {
+        $error = 'Location is required (max 180 characters).';
+    } elseif ($itemDate === '' || !strtotime($itemDate)) {
+        $error = 'A valid date is required.';
+    } elseif ($description === '') {
+        $error = 'Description is required.';
+    } else {
+        $imagePath = null;
+        try {
+            $imagePath = handleImageUpload('image');
+        } catch (Throwable $e) {
+            $error = $e->getMessage();
+        }
+
+        if (!$error) {
+            try {
+                $pdo = getDBConnection();
+                $stmt = $pdo->prepare("
+                    INSERT INTO reports (user_id, item_name, report_type, category, location, item_date, description, image_path, status)
+                    VALUES (:user_id, :item_name, :report_type, :category, :location, :item_date, :description, :image_path, 'open')
+                ");
+                $stmt->execute([
+                    'user_id'     => $currentUserId,
+                    'item_name'   => $itemName,
+                    'report_type' => $reportType,
+                    'category'    => $category,
+                    'location'    => $location,
+                    'item_date'   => $itemDate,
+                    'description' => $description,
+                    'image_path'  => $imagePath,
+                ]);
+
+                header('Location: index.php?msg=report_created');
+                exit;
+            } catch (Throwable $e) {
+                $error = 'Failed to publish report: ' . $e->getMessage();
+            }
+        }
+    }
+}
 
 $pageTitle = 'Report Lost or Found Item';
 require_once __DIR__ . '/includes/header.php';
@@ -16,8 +77,14 @@ require_once __DIR__ . '/includes/header.php';
             <p style="color: var(--text-secondary); font-size: 14px;">Fill in the details below to help connect lost belongings with their owners.</p>
         </div>
 
+        <?php if ($error): ?>
+            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 12px 16px; color: #f87171; font-size: 14px; margin-bottom: 20px;">
+                ⚠️ <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
         <div class="auth-card" style="max-width: 100%;">
-            <form id="newReportForm" enctype="multipart/form-data">
+            <form id="newReportForm" method="POST" action="report.php" enctype="multipart/form-data">
                 <!-- Report Type Selection -->
                 <div class="form-group">
                     <label class="form-label">What are you reporting?</label>
@@ -96,58 +163,5 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
 </main>
-
-<script>
-$(document).ready(function () {
-    // Image Preview
-    $('#imageFile').on('change', function () {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                $('#imagePreview').attr('src', e.target.result);
-                $('#imagePreviewContainer').slideDown(200);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            $('#imagePreviewContainer').slideUp(200);
-        }
-    });
-
-    // Form submission via AJAX
-    $('#newReportForm').on('submit', function (e) {
-        e.preventDefault();
-        const btn = $('#submitReportBtn');
-        btn.prop('disabled', true).text('Publishing...');
-
-        const formData = new FormData(this);
-
-        $.ajax({
-            url: 'api/reports.php',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function (res) {
-                btn.prop('disabled', false).text('Publish Report');
-                if (res.success) {
-                    showToast('Report published successfully!');
-                    setTimeout(() => {
-                        window.location.href = 'index.php';
-                    }, 1000);
-                } else {
-                    showToast(res.message || 'Failed to submit report', 'error');
-                }
-            },
-            error: function (xhr) {
-                btn.prop('disabled', false).text('Publish Report');
-                const err = xhr.responseJSON ? xhr.responseJSON.message : 'Error publishing report.';
-                showToast(err, 'error');
-            }
-        });
-    });
-});
-</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

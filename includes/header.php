@@ -12,7 +12,6 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' — Campus Lost & Found' : 'Campus Lost-and-Found Portal' ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="assets/js/jquery.min.js"></script>
 </head>

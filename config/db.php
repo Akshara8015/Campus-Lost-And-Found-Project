@@ -34,11 +34,9 @@ if (!function_exists('loadEnv')) {
                     $value = substr($value, 1, -1);
                 }
 
-                if (!array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV)) {
-                    putenv("$key=$value");
-                    $_ENV[$key] = $value;
-                    $_SERVER[$key] = $value;
-                }
+                putenv("$key=$value");
+                $_ENV[$key] = $value;
+                $_SERVER[$key] = $value;
             }
         }
     }
@@ -47,12 +45,18 @@ if (!function_exists('loadEnv')) {
 // Load environment variables from .env
 loadEnv(dirname(__DIR__) . DIRECTORY_SEPARATOR . '.env');
 
-// Read database configuration with environment variable support
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_PORT', getenv('DB_PORT') ?: '5432');
-define('DB_NAME', getenv('DB_NAME') ?: 'campus_lost_found');
-define('DB_USER', getenv('DB_USER') ?: 'postgres');
-define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
+// Read database configuration with environment variable support (checks $_ENV, $_SERVER, and getenv)
+$envHost = $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST');
+$envPort = $_ENV['DB_PORT'] ?? $_SERVER['DB_PORT'] ?? getenv('DB_PORT');
+$envName = $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME');
+$envUser = $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER');
+$envPass = $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? (getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
+
+define('DB_HOST', $envHost ?: 'localhost');
+define('DB_PORT', $envPort ?: '5432');
+define('DB_NAME', $envName ?: 'campus_lost_found');
+define('DB_USER', $envUser ?: 'postgres');
+define('DB_PASS', $envPass !== null ? (string)$envPass : '');
 
 function getDBConnection(): PDO {
     static $pdo = null;

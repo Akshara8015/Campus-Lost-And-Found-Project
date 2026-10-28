@@ -11,6 +11,13 @@
     </div>
 </footer>
 
+<!-- Modular Client-Side Engine -->
+<script src="assets/js/toast.js"></script>
+<script src="assets/js/item-details.js"></script>
+<script src="assets/js/claims.js"></script>
+<script src="assets/js/items-feed.js"></script>
+<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/report-form.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

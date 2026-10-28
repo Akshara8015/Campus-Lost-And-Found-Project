@@ -122,17 +122,14 @@ if ($method === 'POST') {
         if (!$report) {
             jsonError('Report not found.', 404);
         }
-        if ($report['report_type'] !== 'found') {
-            jsonError('Claims can only be submitted on Found items.');
-        }
         if ((int)$report['user_id'] === $currentUserId) {
-            jsonError('You cannot claim an item you reported yourself.');
+            jsonError('You cannot submit a claim or recovery response on an item you reported yourself.');
         }
         if (in_array($report['status'], ['resolved', 'closed'], true)) {
             jsonError('This item report has already been resolved or closed.');
         }
 
-        // Check if user already submitted a claim
+        // Check if user already submitted a response
         $stmt = $pdo->prepare("SELECT id, status FROM claims WHERE report_id = :report_id AND claimant_id = :claimant_id");
         $stmt->execute([
             'report_id'   => $reportId,
@@ -140,7 +137,8 @@ if ($method === 'POST') {
         ]);
         $existing = $stmt->fetch();
         if ($existing) {
-            jsonError('You have already submitted a claim for this item (Status: ' . htmlspecialchars($existing['status']) . ').');
+            $msgType = $report['report_type'] === 'lost' ? 'found recovery notice' : 'claim';
+            jsonError('You have already submitted a ' . $msgType . ' for this item (Status: ' . htmlspecialchars($existing['status']) . ').');
         }
 
         // Insert claim & update report status to claim_requested
@@ -166,7 +164,11 @@ if ($method === 'POST') {
 
         $pdo->commit();
 
-        jsonSuccess('Claim submitted successfully! The founder has been notified to review your claim.', [
+        $successMessage = ($report['report_type'] === 'lost')
+            ? 'Thank you! The person who lost this item has been notified that you found it.'
+            : 'Claim submitted successfully! The finder has been notified to review your claim.';
+
+        jsonSuccess($successMessage, [
             'claim_id'      => $newClaim['id'],
             'report_status' => 'claim_requested',
         ], 201);

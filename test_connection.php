@@ -120,7 +120,7 @@ if ($pdo_pgsql_loaded) {
                 <strong>Connection Error:</strong><br>
                 <?= htmlspecialchars($error_msg) ?>
                 <p style="margin-top: 10px;">
-                    To fix this, open <span class="code-snippet">config/db.php</span> and replace <code>YOUR_POSTGRES_PASSWORD_HERE</code> with the password you chose during PostgreSQL installation.
+                    To fix this, open <span class="code-snippet">.env</span> in the root directory and ensure <code>DB_PASS</code> matches the password you chose during PostgreSQL installation.
                 </p>
             </div>
         <?php endif; ?>

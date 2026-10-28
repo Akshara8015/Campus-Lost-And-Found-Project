@@ -1,0 +1,5 @@
+# Ignore minified files and vendor libraries from being formatted
+*.min.js
+*.min.css
+assets/js/vendor/**
+vendor/**
