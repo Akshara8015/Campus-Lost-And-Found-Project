@@ -176,7 +176,8 @@
             });
 
             // Delete report permanently handler (e.g. if reported by mistake)
-            $(document).on('click', '.btn-delete-report', function () {
+            $(document).on('click', '.btn-delete-report', function (e) {
+                e.preventDefault();
                 const reportId = $(this).data('report-id');
                 const itemName = $(this).data('name') || 'this report';
                 const btn = $(this);

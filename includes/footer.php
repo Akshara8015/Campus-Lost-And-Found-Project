@@ -12,12 +12,12 @@
 </footer>
 
 <!-- Modular Client-Side Engine -->
-<script src="assets/js/toast.js"></script>
-<script src="assets/js/item-details.js"></script>
-<script src="assets/js/claims.js"></script>
-<script src="assets/js/items-feed.js"></script>
-<script src="assets/js/dashboard.js"></script>
-<script src="assets/js/report-form.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/toast.js?v=<?= filemtime(__DIR__ . '/../assets/js/toast.js') ?>"></script>
+<script src="assets/js/item-details.js?v=<?= filemtime(__DIR__ . '/../assets/js/item-details.js') ?>"></script>
+<script src="assets/js/claims.js?v=<?= filemtime(__DIR__ . '/../assets/js/claims.js') ?>"></script>
+<script src="assets/js/items-feed.js?v=<?= filemtime(__DIR__ . '/../assets/js/items-feed.js') ?>"></script>
+<script src="assets/js/dashboard.js?v=<?= filemtime(__DIR__ . '/../assets/js/dashboard.js') ?>"></script>
+<script src="assets/js/report-form.js?v=<?= filemtime(__DIR__ . '/../assets/js/report-form.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>"></script>
 </body>
 </html>

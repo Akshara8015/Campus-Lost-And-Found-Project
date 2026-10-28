@@ -84,6 +84,10 @@
             window.showToast('Item report published successfully!', 'success');
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
+        } else if (msg === 'report_deleted') {
+            window.showToast('Report deleted successfully.', 'info');
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
         }
     });
 })();

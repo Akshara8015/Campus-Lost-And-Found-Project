@@ -6,6 +6,28 @@ requireLogin();
 $pdo = getDBConnection();
 $currentUserId = getCurrentUserId();
 
+// Direct server-side deletion fallback
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_report') {
+    $reportId = (int)($_POST['report_id'] ?? 0);
+    if ($reportId > 0) {
+        $stmt = $pdo->prepare("SELECT id, user_id, image_path FROM reports WHERE id = :id");
+        $stmt->execute(['id' => $reportId]);
+        $rep = $stmt->fetch();
+        if ($rep && ((int)$rep['user_id'] === $currentUserId || isAdmin())) {
+            $pdo->beginTransaction();
+            $pdo->prepare("DELETE FROM claims WHERE report_id = :id")->execute(['id' => $reportId]);
+            $pdo->prepare("DELETE FROM reports WHERE id = :id")->execute(['id' => $reportId]);
+            $pdo->commit();
+            if (!empty($rep['image_path'])) {
+                $imgPath = __DIR__ . '/' . ltrim($rep['image_path'], '/\\');
+                if (file_exists($imgPath)) { @unlink($imgPath); }
+            }
+            header('Location: my_reports.php?msg=report_deleted');
+            exit;
+        }
+    }
+}
+
 // Fetch reports created by this user
 $stmt = $pdo->prepare("
     SELECT 
@@ -142,12 +164,16 @@ require_once __DIR__ . '/includes/header.php';
                                         <option value="resolved" <?= $item['status'] === 'resolved' ? 'selected' : '' ?>>Resolved</option>
                                         <option value="closed" <?= $item['status'] === 'closed' ? 'selected' : '' ?>>Closed</option>
                                     </select>
-                                    <button type="button" class="btn btn-danger btn-sm btn-delete-report" 
-                                        data-report-id="<?= $item['id'] ?>" 
-                                        data-name="<?= htmlspecialchars($item['item_name']) ?>"
-                                        title="Delete this report permanently">
-                                        🗑 Delete
-                                    </button>
+                                    <form method="POST" action="my_reports.php" style="display: inline; margin: 0;" onsubmit="return confirm('Are you sure you want to delete <?= htmlspecialchars(addslashes($item['item_name'])) ?>?');">
+                                        <input type="hidden" name="action" value="delete_report">
+                                        <input type="hidden" name="report_id" value="<?= $item['id'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm btn-delete-report" 
+                                            data-report-id="<?= $item['id'] ?>" 
+                                            data-name="<?= htmlspecialchars($item['item_name']) ?>"
+                                            title="Delete this report permanently">
+                                            🗑 Delete
+                                        </button>
+                                    </form>
                                 </div>
                                 <span style="font-size: 11px; color: var(--text-muted);">Change to Resolved when recovered, or Delete if reported by mistake</span>
                             </div>
